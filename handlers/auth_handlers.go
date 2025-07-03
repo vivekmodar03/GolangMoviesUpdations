@@ -63,7 +63,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 
 	if err != nil {
-		http.Error(w, "Email not found", http.StatusUnauthorized)
+		http.Error(w, "Email not found. Register Please..", http.StatusUnauthorized)
 		return
 	}
 
@@ -84,6 +84,11 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
 	}
+
+
+	json.NewEncoder(w).Encode(map[string]string{ "Message" : "Logged in Successfully.."	})
+
+	json.NewEncoder(w).Encode(map[string]string{ "COPY THE TOKEN AND PASTE INTO AUTHORIZATION -> BEARER TOKEN"})
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"token": tokenString,
