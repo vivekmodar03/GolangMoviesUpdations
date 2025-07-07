@@ -20,15 +20,20 @@ func SetupRouter() *mux.Router {
 	// r.HandleFunc("/movies/{id}", handlers.DeleteMovieById).Methods("DELETE")
 	// r.HandleFunc("/movies", handlers.DeleteAllMovies).Methods("DELETE")
 
-	r.HandleFunc("/register", handlers.RegisterUser).Methods("POST")
-	r.HandleFunc("/login", handlers.LoginUser).Methods("POST")
+// Public routes (no auth required)
+r.HandleFunc("/register", handlers.RegisterUser).Methods("POST")
+r.HandleFunc("/login", handlers.LoginUser).Methods("POST")
 
-	r.HandleFunc("/movies", middleware.Auth(handlers.GetMovies)).Methods("GET")
-    r.HandleFunc("/movies", middleware.Auth(handlers.CreateMovie)).Methods("POST")
-    r.HandleFunc("/movies/{id}", middleware.Auth(handlers.GetMovieByID)).Methods("GET")
-    r.HandleFunc("/movies/{id}", middleware.Auth(handlers.UpdateMovie)).Methods("PUT")
-    r.HandleFunc("/movies/{id}", middleware.Auth(handlers.DeleteMovieById)).Methods("DELETE")
-    r.HandleFunc("/movies", middleware.Auth(handlers.DeleteAllMovies)).Methods("DELETE")
+// Protected routes (require valid JWT)
+r.HandleFunc("/movies", middleware.Auth(handlers.GetMovies)).Methods("GET")
+r.HandleFunc("/movies", middleware.Auth(handlers.CreateMovie)).Methods("POST")
+r.HandleFunc("/movies/{id}", middleware.Auth(handlers.GetMovieByID)).Methods("GET")
+r.HandleFunc("/movies/{id}", middleware.Auth(handlers.UpdateMovie)).Methods("PUT")
+r.HandleFunc("/movies/{id}", middleware.Auth(handlers.DeleteMovieById)).Methods("DELETE")
+
+// Token management
+r.HandleFunc("/refresh-token", handlers.RefreshToken).Methods("POST")  // New
+r.HandleFunc("/logout", middleware.Auth(handlers.LogoutUser)).Methods("POST")  // New
 
 	return r
 }

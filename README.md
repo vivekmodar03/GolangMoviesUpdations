@@ -2,19 +2,24 @@
  This is a simple Go-based REST API project for managing a Movies database. It uses
  MySQL as the backend database and Gorilla Mux for routing.
  
-🚀 Features
-✅ Register new users
-✅ Login with email → receive 6-digit OTP via email
-✅ Use token in Authorization header
-✅ CRUD operations for Movies (Create, Read, Update, Delete)
-✅ Middleware to protect routes using OTP as bearer token
+✅ Implemented Features
+Feature	Status	        Key     Files/Middleware
+User Registration	    Done	handlers.RegisterUser
+User Login (JWT)	    Done	handlers.LoginUser
+JWT Authentication	    Done	middleware.Auth
+Protected Routes	    Done	All /movies routes
+Token Refresh	        Done	/refresh-token
+Logout (Token Revoke)	Done	/logout
+Password Hashing	    Done	bcrypt in RegisterUser
+Cookie Handling	        Done	http.SetCookie
+Context Propagation	    Done	r.WithContext()
 
 
  ⚙️ Tech Stack :
-Language: Go (Golang)
-Database: MySQL
-Routing: Gorilla Mux
-JSON Parsing: encoding/json
+✅ Language: Go (Golang)
+✅ Database: MySQL
+✅ Routing: Gorilla Mux
+✅ JSON Parsing: encoding/json
 
 
 📦 Setup Instructions
