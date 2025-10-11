@@ -319,12 +319,14 @@ import (
 	"log"
 	"net/http"
 	"github.com/vivekmodar03/go-movies-crud/internal/app/db"
+	"github.com/vivekmodar03/go-movies-crud/internal/app/firebase"
 	"github.com/vivekmodar03/go-movies-crud/internal/routes"
 )
 
 func main() {
 	db.Init() // Connect to MySQL
-	r := Routes.SetupRouter() // Register routes
+	firebase.Init() // Initialize Firebase Admin SDK
+	r := routes.SetupRouter() // Register routes
 	log.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

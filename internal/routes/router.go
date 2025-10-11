@@ -1,20 +1,20 @@
-package Routes
+package routes
 
 import (
-	"github.com/vivekmodar03/go-movies-crud/internal/handlers"
 	"github.com/gorilla/mux"
+	"github.com/vivekmodar03/go-movies-crud/internal/handlers"
+	"github.com/vivekmodar03/go-movies-crud/internal/middleware"
 )
 
 func SetupRouter() *mux.Router {
 	r := mux.NewRouter()
 
-	// Public routes for movie CRUD operations
-	r.HandleFunc("/movies", handlers.GetMovies).Methods("GET")
-	r.HandleFunc("/movies/{id}", handlers.GetMovieByID).Methods("GET")
-	r.HandleFunc("/movies", handlers.CreateMovie).Methods("POST")
-	r.HandleFunc("/movies/{id}", handlers.UpdateMovie).Methods("PUT")
-	r.HandleFunc("/movies/{id}", handlers.DeleteMovieById).Methods("DELETE")
-	r.HandleFunc("/movies", handlers.DeleteAllMovies).Methods("DELETE")
+	// All movie routes are protected and require a valid Firebase ID token
+	r.HandleFunc("/movies", middleware.Auth(handlers.CreateMovie)).Methods("POST")
+	r.HandleFunc("/movies/{id}", middleware.Auth(handlers.GetMovieByID)).Methods("GET")
+	r.HandleFunc("/movies/{id}", middleware.Auth(handlers.UpdateMovie)).Methods("PUT")
+	r.HandleFunc("/movies/{id}", middleware.Auth(handlers.DeleteMovieById)).Methods("DELETE")
+	r.HandleFunc("/movies", middleware.Auth(handlers.DeleteAllMovies)).Methods("DELETE")
 
 	return r
 }
