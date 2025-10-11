@@ -134,8 +134,15 @@ func DeleteMovieById(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]
 
-	query := "DELETE FROM movies WHERE id = ?"
-	result, err := db.DB.Exec(query, id)
+	tx, err := db.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to begin transaction: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback() // Rollback on any error
+
+	// Delete the movie
+	result, err := tx.Exec("DELETE FROM movies WHERE id = ?", id)
 	if err != nil {
 		http.Error(w, "Failed to delete movie: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -147,17 +154,71 @@ func DeleteMovieById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"message": "Movie deleted successfully"})
+	// Re-number the IDs
+	_, err = tx.Exec("SET @count = 0;")
+	if err != nil {
+		http.Error(w, "Failed to renumber IDs: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = tx.Exec("UPDATE movies SET id = @count:= @count + 1 ORDER BY id;")
+	if err != nil {
+		http.Error(w, "Failed to renumber IDs: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Reset auto-increment
+	var maxID int
+	err = tx.QueryRow("SELECT MAX(id) FROM movies").Scan(&maxID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			maxID = 0
+		} else {
+			http.Error(w, "Error getting max ID: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Correctly format the ALTER TABLE query
+	query := fmt.Sprintf("ALTER TABLE movies AUTO_INCREMENT = %d", maxID+1)
+	_, err = tx.Exec(query)
+	if err != nil {
+		http.Error(w, "Failed to reset auto-increment: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Failed to commit transaction: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Movie deleted successfully and IDs have been re-ordered"})
 }
 
 // DELETE /movies - Delete all movies
 func DeleteAllMovies(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	query := "DELETE FROM movies"
-	_, err := db.DB.Exec(query)
+	tx, err := db.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to begin transaction: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec("DELETE FROM movies")
 	if err != nil {
 		http.Error(w, "Failed to delete all movies: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = tx.Exec("ALTER TABLE movies AUTO_INCREMENT = 1")
+	if err != nil {
+		http.Error(w, "Failed to reset auto-increment: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Failed to commit transaction: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
