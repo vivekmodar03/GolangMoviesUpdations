@@ -10,4 +10,5 @@ type Movie struct {
 	Isbn     string   `json:"isbn"`
 	Title    string   `json:"title"`
 	Director Director `json:"director"`
+	UserID   string   `json:"user_id,omitempty"`
 }

@@ -114,7 +114,7 @@ DELETE /movies – Delete all movies
 🧪 Testing
 You can test this API using tools like:
 Postman
-cURL
+URL
 
 ✍️ Author
 Vivek Modar

@@ -1,51 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Firebase Token Generator</title>
+    <title>Get Firebase ID Token</title>
 </head>
 <body>
     <h1>Get Firebase ID Token</h1>
-    <p>Open the browser's developer console (F12) to see the ID token after you log in.</p>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-
-    <script>
-        // --- IMPORTANT: PASTE YOUR FIREBASE CONFIGURATION HERE ---
-            const firebaseConfig = {
-                apiKey: "AIzaSyAQgAtVvpk0ui3x8WCZGVtXtyO28fYwlbI",
-                authDomain: "go-movies-crud-8ce59.firebaseapp.com",
-                projectId: "go-movies-crud-8ce59",
-                storageBucket: "go-movies-crud-8ce59.firebasestorage.app",
-                messagingSenderId: "60381926148",
-                appId: "1:60381926148:web:2cf38131f147a31ca5f651",
-                measurementId: "G-VQJ8XPETFB"
-            };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-
-        // --- USER CREDENTIALS ---
-        const email = "mona@gmail.com"; // The email of your test user
-        const password = "mona123";  // The password of your test user
-
-        // Sign in the user and get the ID token
-        auth.signInWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                // Signed in
-                console.log("User signed in successfully!");
-                return userCredential.user.getIdToken();
-            })
-            .then((idToken) => {
-                console.log("--- Firebase ID Token ---");
-                console.log(idToken);
-                document.body.innerHTML += '<h2>Token successfully generated and printed to console.</h2>';
-            })
-            .catch((error) => {
-                console.error("Authentication Error:", error);
-            });
-
-    </script>
+    <p>To get your Firebase ID token, you need to use an API client like Postman to send a POST request to the <code>/login</code> endpoint.</p>
+    <p>Set the authorization type to "Basic Auth" and use your registered email and password as the credentials.</p>
+    <p>The API will return a JSON response containing your ID token.</p>
 </body>
 </html>

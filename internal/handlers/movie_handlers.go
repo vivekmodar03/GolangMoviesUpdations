@@ -1,230 +1,3 @@
-// package handlers
-
-// import (
-// 	"database/sql"
-// 	"encoding/json"
-// 	"fmt"
-// 	"net/http"
-// 	"strconv"
-
-// 	"github.com/gorilla/mux"
-// 	"github.com/vivekmodar03/go-movies-crud/internal/app/db"
-// 	"github.com/vivekmodar03/go-movies-crud/internal/model"
-// )
-
-// // POST /movies - Add a new movie
-// func CreateMovie(w http.ResponseWriter, r *http.Request) {
-// 	var movie model.Movie
-
-// 	err := json.NewDecoder(r.Body).Decode(&movie)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	query := `INSERT INTO movies (isbn, title, director_firstname, director_lastname) VALUES (?, ?, ?, ?)`
-// 	result, err := db.DB.Exec(query, movie.Isbn, movie.Title, movie.Director.Firstname, movie.Director.Lastname)
-// 	if err != nil {
-// 		http.Error(w, "Error inserting into database: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	id, _ := result.LastInsertId()
-// 	fmt.Fprintf(w, "Movie inserted with ID: %d", id)
-// 	json.NewEncoder(w).Encode(movie)
-
-// }
-
-// // GET /movies - Get all movies
-// func GetMovies(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-
-// 	rows, err := db.DB.Query("SELECT * FROM movies")
-// 	if err != nil {
-// 		http.Error(w, "Failed to fetch movies: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	defer rows.Close()
-
-// 	var movies []model.Movie
-
-// 	for rows.Next() {
-// 		var movie model.Movie
-// 		var firstname, lastname string
-
-// 		err := rows.Scan(&movie.ID, &movie.Isbn, &movie.Title, &firstname, &lastname)
-// 		if err != nil {
-// 			http.Error(w, "Error scanning row: "+err.Error(), http.StatusInternalServerError)
-// 			return
-// 		}
-
-// 		movie.Director = model.Director{
-// 			Firstname: firstname,
-// 			Lastname:  lastname,
-// 		}
-
-// 		movies = append(movies, movie)
-// 	}
-
-// 	json.NewEncoder(w).Encode(movies)
-// }
-
-// // GET /movies/{id} - Get a movie by ID
-// func GetMovieByID(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-
-// 	params := mux.Vars(r)
-// 	id := params["id"]
-
-// 	var movie model.Movie
-// 	var firstname, lastname string
-
-// 	query := "SELECT * FROM movies WHERE id = ?"
-// 	err := db.DB.QueryRow(query, id).Scan(&movie.ID, &movie.Isbn, &movie.Title, &firstname, &lastname)
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			http.Error(w, "Movie not found", http.StatusNotFound)
-// 		} else {
-// 			http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
-// 		}
-// 		return
-// 	}
-
-// 	movie.Director = model.Director{
-// 		Firstname: firstname,
-// 		Lastname:  lastname,
-// 	}
-
-// 	json.NewEncoder(w).Encode(movie)
-// }
-
-// // PUT /movies/{id} - Update a movie by ID
-// func UpdateMovie(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	params := mux.Vars(r)
-// 	id := params["id"]
-
-// 	var updatedMovie model.Movie
-// 	err := json.NewDecoder(r.Body).Decode(&updatedMovie)
-// 	if err != nil {
-// 		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	query := `UPDATE movies SET isbn = ?, title = ?, director_firstname = ?, director_lastname = ? WHERE id = ?`
-// 	result, err := db.DB.Exec(query, updatedMovie.Isbn, updatedMovie.Title, updatedMovie.Director.Firstname, updatedMovie.Director.Lastname, id)
-// 	if err != nil {
-// 		http.Error(w, "Failed to update movie: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	rowsAffected, _ := result.RowsAffected()
-// 	if rowsAffected == 0 {
-// 		http.Error(w, "No movie found with the given ID", http.StatusNotFound)
-// 		return
-// 	}
-
-// 	updatedMovie.ID, _ = strconv.Atoi(id)
-// 	json.NewEncoder(w).Encode(updatedMovie)
-// }
-
-// // DELETE /movies/{id} - Delete a movie by ID
-// func DeleteMovieById(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	params := mux.Vars(r)
-// 	id := params["id"]
-
-// 	tx, err := db.DB.Begin()
-// 	if err != nil {
-// 		http.Error(w, "Failed to begin transaction: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	defer tx.Rollback() // Rollback on any error
-
-// 	// Delete the movie
-// 	result, err := tx.Exec("DELETE FROM movies WHERE id = ?", id)
-// 	if err != nil {
-// 		http.Error(w, "Failed to delete movie: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	rowsAffected, _ := result.RowsAffected()
-// 	if rowsAffected == 0 {
-// 		http.Error(w, "No movie found with the given ID", http.StatusNotFound)
-// 		return
-// 	}
-
-// 	// Re-number the IDs
-// 	_, err = tx.Exec("SET @count = 0;")
-// 	if err != nil {
-// 		http.Error(w, "Failed to renumber IDs: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	_, err = tx.Exec("UPDATE movies SET id = @count:= @count + 1 ORDER BY id;")
-// 	if err != nil {
-// 		http.Error(w, "Failed to renumber IDs: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	// Reset auto-increment
-// 	var maxID int
-// 	err = tx.QueryRow("SELECT MAX(id) FROM movies").Scan(&maxID)
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			maxID = 0
-// 		} else {
-// 			http.Error(w, "Error getting max ID: "+err.Error(), http.StatusInternalServerError)
-// 			return
-// 		}
-// 	}
-
-// 	// Correctly format the ALTER TABLE query
-// 	query := fmt.Sprintf("ALTER TABLE movies AUTO_INCREMENT = %d", maxID+1)
-// 	_, err = tx.Exec(query)
-// 	if err != nil {
-// 		http.Error(w, "Failed to reset auto-increment: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	if err := tx.Commit(); err != nil {
-// 		http.Error(w, "Failed to commit transaction: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	json.NewEncoder(w).Encode(map[string]string{"message": "Movie deleted successfully and IDs have been re-ordered"})
-// }
-
-// // DELETE /movies - Delete all movies
-// func DeleteAllMovies(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-
-// 	tx, err := db.DB.Begin()
-// 	if err != nil {
-// 		http.Error(w, "Failed to begin transaction: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	defer tx.Rollback()
-
-// 	_, err = tx.Exec("DELETE FROM movies")
-// 	if err != nil {
-// 		http.Error(w, "Failed to delete all movies: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	_, err = tx.Exec("ALTER TABLE movies AUTO_INCREMENT = 1")
-// 	if err != nil {
-// 		http.Error(w, "Failed to reset auto-increment: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	if err := tx.Commit(); err != nil {
-// 		http.Error(w, "Failed to commit transaction: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	json.NewEncoder(w).Encode(map[string]string{"message": "All movies deleted successfully"})
-// }
-
 
 package handlers
 
@@ -234,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"log"
 
 	"github.com/gorilla/mux"
 	"github.com/vivekmodar03/go-movies-crud/internal/app/db"
@@ -253,25 +27,50 @@ func getUserUIDFromContext(r *http.Request) (string, error) {
 func CreateMovie(w http.ResponseWriter, r *http.Request) {
 	userUID, err := getUserUIDFromContext(r)
 	if err != nil {
+		log.Println("Error getting user UID from context:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	var movie model.Movie
 	if err := json.NewDecoder(r.Body).Decode(&movie); err != nil {
+		log.Println("Error decoding request body:", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	query := `INSERT INTO movies (isbn, title, director_firstname, director_lastname, user_id) VALUES (?, ?, ?, ?, ?)`
-	result, err := db.DB.Exec(query, movie.Isbn, movie.Title, movie.Director.Firstname, movie.Director.Lastname, userUID)
+	movie.UserID = userUID
+
+	// 1. Begin a transaction
+	tx, err := db.DB.Begin()
 	if err != nil {
+		log.Println("Failed to begin transaction:", err)
+		http.Error(w, "Failed to begin transaction: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	query := `INSERT INTO movies (isbn, title, director_firstname, director_lastname, user_id) VALUES (?, ?, ?, ?, ?)`
+	
+	// 2. Execute the query on the transaction (tx), not the direct database connection (db.DB)
+	result, err := tx.Exec(query, movie.Isbn, movie.Title, movie.Director.Firstname, movie.Director.Lastname, movie.UserID)
+	if err != nil {
+		// If there's an error, roll back the transaction
+		tx.Rollback()
+		log.Println("Error inserting into database:", err)
 		http.Error(w, "Error inserting into database: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
+	// 3. Commit the transaction to permanently save the data
+	if err := tx.Commit(); err != nil {
+		log.Println("Failed to commit transaction:", err)
+		http.Error(w, "Failed to commit transaction: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	id, _ := result.LastInsertId()
 	movie.ID = int(id)
+	log.Println("Successfully inserted and committed movie with ID:", id) // Updated log message
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(movie)
 }
